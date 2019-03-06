@@ -1,12 +1,23 @@
 package model
 
-import "errors"
+import (
+	"errors"
+	"time"
+)
 
 // Name represents a todo name
 type Name string
 
 // Description represents a todo description
 type Description string
+
+// Todo represents a single todo item
+type Todo struct {
+	Name        Name
+	Description Description
+	CreatedAt   time.Time
+	Until       time.Time
+}
 
 var (
 	// ErrEmptyName signalizes that provided name was empty
@@ -24,8 +35,27 @@ var (
 	maxDecriptionLength = 300
 )
 
-// NewName parses a raw name
-func NewName(raw string) (Name, error) {
+// NewTodo ...
+func NewTodo(name, description string, createdAt, until time.Time) (*Todo, error) {
+	n, err := newName(name)
+	if err != nil {
+		return nil, err
+	}
+
+	d, err := newDescription(description)
+	if err != nil {
+		return nil, err
+	}
+
+	return &Todo{
+		Name:        n,
+		Description: d,
+		CreatedAt:   createdAt,
+		Until:       until,
+	}, nil
+}
+
+func newName(raw string) (Name, error) {
 	if len(raw) == 0 {
 		return "", ErrEmptyName
 	}
@@ -37,8 +67,7 @@ func NewName(raw string) (Name, error) {
 	return Name(raw), nil
 }
 
-// NewDescription parses a raw description
-func NewDescription(raw string) (Description, error) {
+func newDescription(raw string) (Description, error) {
 	if len(raw) > maxDecriptionLength {
 		return "", ErrDescriptionTooLong
 	}

@@ -3,81 +3,64 @@ package model
 import (
 	"services/utils/rand"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/require"
 )
 
-func TestName(t *testing.T) {
-
-	valid := rand.String(100)
+func TestTodo(t *testing.T) {
+	validName := rand.String(100)
+	validDescription := rand.String(300)
+	createdAt := time.Now().UTC()
+	until := createdAt.Add(time.Hour)
 
 	tcs := []struct {
-		Description    string
-		GivenRaw       string
-		ExpectedResult Name
-		ExpectedError  error
+		Description      string
+		GivenName        string
+		GivenDescription string
+		ExpectedResult   *Todo
+		ExpectedError    error
 	}{
 		{
-			Description:   "invalid/empty",
-			GivenRaw:      "",
-			ExpectedError: ErrEmptyName,
+			Description:      "invalid/empty name",
+			GivenName:        "",
+			GivenDescription: validDescription,
+			ExpectedError:    ErrEmptyName,
 		},
 		{
-			Description:   "invalid/too long",
-			GivenRaw:      rand.String(101),
-			ExpectedError: ErrNameTooLong,
+			Description:      "invalid/name too long",
+			GivenName:        rand.String(101),
+			GivenDescription: validDescription,
+			ExpectedError:    ErrNameTooLong,
 		},
 		{
-			Description:    "valid",
-			GivenRaw:       valid,
-			ExpectedResult: Name(valid),
+			Description:      "invalid/description too long",
+			GivenName:        validName,
+			GivenDescription: rand.String(301),
+			ExpectedError:    ErrDescriptionTooLong,
+		},
+		{
+			Description:      "valid",
+			GivenName:        validName,
+			GivenDescription: validDescription,
+			ExpectedResult: &Todo{
+				Name:        Name(validName),
+				Description: Description(validDescription),
+				CreatedAt:   createdAt,
+				Until:       until,
+			},
 		},
 	}
 
 	for _, tc := range tcs {
 		t.Run(tc.Description, func(t *testing.T) {
-			n, err := NewName(tc.GivenRaw)
+			n, err := NewTodo(tc.GivenName, tc.GivenDescription, createdAt, until)
 
 			if tc.ExpectedError != nil {
 				require.EqualError(t, err, tc.ExpectedError.Error())
 			} else {
 				require.NoError(t, err)
 				require.Equal(t, tc.ExpectedResult, n)
-			}
-		})
-	}
-}
-
-func TestDescription(t *testing.T) {
-	valid := rand.String(300)
-
-	tcs := []struct {
-		Description    string
-		GivenRaw       string
-		ExpectedResult Description
-		ExpectedError  error
-	}{
-		{
-			Description:   "invalid/too long",
-			GivenRaw:      rand.String(301),
-			ExpectedError: ErrDescriptionTooLong,
-		},
-		{
-			Description:    "valid",
-			GivenRaw:       valid,
-			ExpectedResult: Description(valid),
-		},
-	}
-
-	for _, tc := range tcs {
-		t.Run(tc.Description, func(t *testing.T) {
-			d, err := NewDescription(tc.GivenRaw)
-
-			if tc.ExpectedError != nil {
-				require.EqualError(t, err, tc.ExpectedError.Error())
-			} else {
-				require.NoError(t, err)
-				require.Equal(t, tc.ExpectedResult, d)
 			}
 		})
 	}
