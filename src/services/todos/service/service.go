@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"services/todos/model"
 
 	"github.com/gorilla/mux"
 )
@@ -42,12 +43,17 @@ func (s Service) handleCreateTodo(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Error parsing json", http.StatusBadRequest)
 	}
 
-	if dto.Name == "" {
-		http.Error(w, "Empty name", http.StatusBadRequest)
-	}
+	_, err = model.NewName(dto.Name)
+	if err != nil {
+		if err == model.ErrEmptyName {
+			http.Error(w, "Empty name", http.StatusBadRequest)
+			return
+		}
 
-	if len(dto.Name) > 100 {
-		http.Error(w, "Name too long", http.StatusBadRequest)
+		if err == model.ErrNameTooLong {
+			http.Error(w, "Name too long", http.StatusBadRequest)
+			return
+		}
 	}
 
 	if len(dto.Description) > 300 {
