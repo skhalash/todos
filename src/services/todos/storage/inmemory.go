@@ -11,7 +11,7 @@ func (s *inMemoryStorage) Add(t model.Todo) error {
 	return nil
 }
 
-func (s */inMemoryStorage) GetAll() ([]model.Todo, error) {
+func (s inMemoryStorage) GetAll() ([]model.Todo, error) {
 	return s.todos, nil
 }
 
