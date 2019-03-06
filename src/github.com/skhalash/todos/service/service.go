@@ -19,6 +19,8 @@ func NewService() *Service {
 func (*Service) Run() {
 	router := mux.NewRouter()
 	router.HandleFunc("/todos", getTodos).Methods("GET")
+
+	log.Print("Launching the server")
 	log.Fatal(http.ListenAndServe(":8000", router))
 }
 
