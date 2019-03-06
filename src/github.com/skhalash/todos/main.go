@@ -1,6 +1,8 @@
 package main
 
+import "github.com/skhalash/todos/service"
+
 func main() {
-	service := NewService()
+	service := service.NewService()
 	service.Run()
 }
