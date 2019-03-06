@@ -16,14 +16,19 @@ func NewService() *Service {
 }
 
 // Run launches the Service
-func (*Service) Run() {
+func (s Service) Run() {
 	router := mux.NewRouter()
-	router.HandleFunc("/todos", handleGetTodos).Methods("GET")
+	router.HandleFunc("/todos", s.handleGetTodos).Methods("GET")
+	router.HandleFunc("/todos", s.handleCreateTodo).Methods("POST")
 
 	log.Print("Launching the server")
 	log.Fatal(http.ListenAndServe(":8000", router))
 }
 
-func handleGetTodos(w http.ResponseWriter, r *http.Request) {
+func (s Service) handleGetTodos(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte("Hello, World!"))
+}
+
+func (s Service) handleCreateTodo(w http.ResponseWriter, r *http.Request) {
+
 }
