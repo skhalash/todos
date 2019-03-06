@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"services/todos/storage"
 	"services/utils/rand"
 	"testing"
 	"time"
@@ -14,9 +15,10 @@ import (
 
 func TestCreate(t *testing.T) {
 	tcs := []struct {
-		Description    string
-		GivenBody      CreateTodoDto
-		ExpectedStatus int
+		Description     string
+		GivenBody       CreateTodoDto
+		ExpectedStatus  int
+		VerifyTodoSaved bool
 	}{
 		{
 			Description: "invalid/name empty",
@@ -51,13 +53,15 @@ func TestCreate(t *testing.T) {
 				Until:       time.Now().Add(1 * time.Hour),
 				Description: "Joe owes me money",
 			},
-			ExpectedStatus: http.StatusOK,
+			ExpectedStatus:  http.StatusOK,
+			VerifyTodoSaved: true,
 		},
 	}
 
 	for _, tc := range tcs {
 		t.Run(tc.Description, func(t *testing.T) {
-			s := new(Service)
+			storage := storage.New()
+			sut := NewService(storage)
 
 			data, err := json.Marshal(tc.GivenBody)
 			require.NoError(t, err)
@@ -66,9 +70,15 @@ func TestCreate(t *testing.T) {
 
 			rw := httptest.NewRecorder()
 
-			s.handleCreateTodo(rw, r)
+			sut.handleCreateTodo(rw, r)
 
 			require.Equal(t, tc.ExpectedStatus, rw.Result().StatusCode)
+
+			if tc.VerifyTodoSaved {
+				all, err := storage.GetAll()
+				require.NoError(t, err)
+				require.Len(t, all, 1)
+			}
 		})
 	}
 }

@@ -12,11 +12,13 @@ import (
 )
 
 // Service represents a todo web service
-type Service struct{}
+type Service struct {
+	storage model.Storage
+}
 
 // NewService creates a new instance of Service
-func NewService() *Service {
-	return &Service{}
+func NewService(s model.Storage) *Service {
+	return &Service{storage: s}
 }
 
 // Run launches the Service
@@ -44,7 +46,7 @@ func (s Service) handleCreateTodo(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Error parsing json", http.StatusBadRequest)
 	}
 
-	_, err = model.NewTodo(dto.Name, dto.Description, time.Now().UTC(), dto.Until)
+	todo, err := model.NewTodo(dto.Name, dto.Description, time.Now().UTC(), dto.Until)
 	if err != nil {
 		if err == model.ErrEmptyName {
 			http.Error(w, "Empty name", http.StatusBadRequest)
@@ -60,5 +62,10 @@ func (s Service) handleCreateTodo(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, "Description too long", http.StatusBadRequest)
 			return
 		}
+	}
+
+	if err = s.storage.Add(*todo); err != nil {
+		http.Error(w, "Error storing todo", http.StatusInternalServerError)
+		return
 	}
 }
