@@ -1,20 +1,45 @@
 package service
 
 import (
+	"bytes"
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/require"
 )
 
 func TestCreate(t *testing.T) {
-	s := new(Service)
+	tcs := []struct {
+		Description    string
+		GivenBody      CreateTodoDto
+		ExpectedStatus int
+	}{
+		{
+			Description: "valid",
+			GivenBody: CreateTodoDto{
+				Name:        "Call Joe",
+				Until:       time.Now().Add(1 * time.Hour),
+				Description: "Joe owes me money",
+			},
+			ExpectedStatus: http.StatusOK,
+		},
+	}
 
-	r := httptest.NewRequest(http.MethodPost, "/todos", nil)
-	rw := httptest.NewRecorder()
+	for _, tc := range tcs {
+		s := new(Service)
 
-	s.handleCreateTodo(rw, r)
+		data, err := json.Marshal(tc.GivenBody)
+		require.NoError(t, err)
 
-	require.Equal(t, http.StatusOK, rw.Result().StatusCode)
+		r := httptest.NewRequest(http.MethodPost, "/todos", bytes.NewReader(data))
+
+		rw := httptest.NewRecorder()
+
+		s.handleCreateTodo(rw, r)
+
+		require.Equal(t, tc.ExpectedStatus, rw.Result().StatusCode)
+	}
 }
