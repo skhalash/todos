@@ -6,7 +6,7 @@ import "time"
 type CreateTodoRequest struct {
 	Name        string    `json:"name,omitempty"`
 	Until       time.Time `json:"until,omitempty"`
-	Description string    `json:"decription,omitempty"`
+	Description string    `json:"description,omitempty"`
 }
 
 // GetTodosResponse ...
@@ -19,5 +19,5 @@ type Todo struct {
 	Name        string    `json:"name,omitempty"`
 	CreatedAt   time.Time `json:"createdAt,omitempty"`
 	Until       time.Time `json:"until,omitempty"`
-	Description string    `json:"decription,omitempty"`
+	Description string    `json:"description,omitempty"`
 }

@@ -157,7 +157,6 @@ func TestGet(t *testing.T) {
 
 			require.Equal(t, tc.ExpectedStatus, rw.Result().StatusCode)
 
-<<<<<<< HEAD
 			bytes, err := ioutil.ReadAll(rw.Result().Body)
 			require.NoError(t, err)
 
@@ -166,15 +165,6 @@ func TestGet(t *testing.T) {
 			require.NoError(t, err)
 
 			require.Equal(t, tc.ExpectedResponse, actualResponse)
-=======
-			if tc.VerifyTodoSaved {
-				storageMock.AssertCalled(t, "Add", mock.MatchedBy(func(todo model.Todo) bool {
-					return assert.Equal(t, tc.GivenBody.Name, string(todo.Name)) &&
-						assert.Equal(t, tc.GivenBody.Description, string(todo.Description)) &&
-						assert.Equal(t, tc.GivenBody.Until, todo.Until)
-				}))
-			}
->>>>>>> a9720e4692dee5b212675dcd2a248d0b333cf683
 		})
 	}
 }
