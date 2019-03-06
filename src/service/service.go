@@ -3,8 +3,6 @@ package service
 import (
 	"log"
 	"net/http"
-
-	"github.com/gorilla/mux"
 )
 
 // Service represents a todo web service
@@ -18,12 +16,12 @@ func NewService() *Service {
 // Run launches the Service
 func (*Service) Run() {
 	router := mux.NewRouter()
-	router.HandleFunc("/todos", getTodos).Methods("GET")
+	router.HandleFunc("/todos", handleGetTodos).Methods("GET")
 
 	log.Print("Launching the server")
 	log.Fatal(http.ListenAndServe(":8000", router))
 }
 
-func getTodos(w http.ResponseWriter, r *http.Request) {
+func handleGetTodos(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte("Hello, World!"))
 }
