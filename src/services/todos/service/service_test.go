@@ -93,6 +93,8 @@ func TestCreate(t *testing.T) {
 }
 
 func TestGet(t *testing.T) {
+	now := time.Now().UTC()
+
 	tcs := []struct {
 		Description      string
 		GivenSavedTodos  []model.Todo
@@ -104,6 +106,40 @@ func TestGet(t *testing.T) {
 			ExpectedStatus: http.StatusOK,
 			ExpectedResponse: GetTodosResponse{
 				Todos: []Todo{},
+			},
+		},
+		{
+			Description: "filled",
+			GivenSavedTodos: []model.Todo{
+				model.Todo{
+					Name:        "Call Joe",
+					CreatedAt:   now,
+					Until:       now.Add(1 * time.Hour),
+					Description: "Joe owes me money",
+				},
+				model.Todo{
+					Name:        "Call Ana",
+					CreatedAt:   now,
+					Until:       now.Add(1 * time.Hour),
+					Description: "Ana has a birthday",
+				},
+			},
+			ExpectedStatus: http.StatusOK,
+			ExpectedResponse: GetTodosResponse{
+				Todos: []Todo{
+					Todo{
+						Name:        "Call Joe",
+						CreatedAt:   now,
+						Until:       now.Add(1 * time.Hour),
+						Description: "Joe owes me money",
+					},
+					Todo{
+						Name:        "Call Ana",
+						CreatedAt:   now,
+						Until:       now.Add(1 * time.Hour),
+						Description: "Ana has a birthday",
+					},
+				},
 			},
 		},
 	}

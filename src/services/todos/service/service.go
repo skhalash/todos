@@ -77,7 +77,7 @@ func (s Service) handleGetTodos(w http.ResponseWriter, r *http.Request) {
 	}
 
 	response := GetTodosResponse{
-		Todos: make([]Todo, 0, len(todos)),
+		Todos: make([]Todo, len(todos), len(todos)),
 	}
 	for i, todo := range todos {
 		response.Todos[i] = toTodoDto(todo)
