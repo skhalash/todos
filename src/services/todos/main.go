@@ -1,8 +1,12 @@
 package main
 
-import "todos/service"
+import (
+	"services/todos/service"
+	"services/todos/storage"
+)
 
 func main() {
-	service := service.NewService()
+	storage := storage.New()
+	service := service.NewService(storage)
 	service.Run()
 }
