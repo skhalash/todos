@@ -1,6 +1,6 @@
 package main
 
-import "github.com/skhalash/todos/service"
+import "service"
 
 func main() {
 	service := service.NewService()
