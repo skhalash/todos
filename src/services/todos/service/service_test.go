@@ -5,11 +5,15 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
-	"services/todos/storage"
+	"services/todos/model"
+	"services/todos/model/mocks"
 	"services/utils/rand"
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/assert"
+
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 )
 
@@ -50,7 +54,7 @@ func TestCreate(t *testing.T) {
 			Description: "valid",
 			GivenBody: CreateTodoDto{
 				Name:        "Call Joe",
-				Until:       time.Now().Add(1 * time.Hour),
+				Until:       time.Now().Add(1 * time.Hour).UTC(),
 				Description: "Joe owes me money",
 			},
 			ExpectedStatus:  http.StatusOK,
@@ -60,8 +64,9 @@ func TestCreate(t *testing.T) {
 
 	for _, tc := range tcs {
 		t.Run(tc.Description, func(t *testing.T) {
-			storage := storage.New()
-			sut := NewService(storage)
+			storageMock := &mocks.Storage{}
+			storageMock.On("Add", mock.Anything).Return(nil)
+			sut := NewService(storageMock)
 
 			data, err := json.Marshal(tc.GivenBody)
 			require.NoError(t, err)
@@ -75,9 +80,11 @@ func TestCreate(t *testing.T) {
 			require.Equal(t, tc.ExpectedStatus, rw.Result().StatusCode)
 
 			if tc.VerifyTodoSaved {
-				all, err := storage.GetAll()
-				require.NoError(t, err)
-				require.Len(t, all, 1)
+				storageMock.AssertCalled(t, "Add", mock.MatchedBy(func(todo model.Todo) bool {
+					return assert.Equal(t, tc.GivenBody.Name, string(todo.Name)) &&
+						assert.Equal(t, tc.GivenBody.Description, string(todo.Description)) &&
+						assert.Equal(t, tc.GivenBody.Until, todo.Until)
+				}))
 			}
 		})
 	}
