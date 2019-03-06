@@ -8,6 +8,8 @@ import (
 	"services/todos/model"
 	"time"
 
+	"github.com/pkg/errors"
+
 	"github.com/gorilla/mux"
 )
 
@@ -35,18 +37,22 @@ func (s Service) handleCreateTodo(w http.ResponseWriter, r *http.Request) {
 	body, err := ioutil.ReadAll(r.Body)
 	defer r.Body.Close()
 	if err != nil {
-		http.Error(w, "Error reading request body", http.StatusBadRequest)
+		log.Print(errors.Wrap(err, "Error reading request body"))
+		http.Error(w, "Empty body", http.StatusBadRequest)
 		return
 	}
 
 	var request CreateTodoRequest
 	if err = json.Unmarshal(body, &request); err != nil {
-		http.Error(w, "Error unmarshaling json", http.StatusBadRequest)
+		log.Print(errors.Wrap(err, "Error unmarshaling json"))
+		http.Error(w, "Invalid json", http.StatusBadRequest)
 		return
 	}
 
 	todo, err := model.NewTodo(request.Name, request.Description, time.Now().UTC(), request.Until)
 	if err != nil {
+		log.Print(errors.Wrap(err, "Invalid request"))
+
 		if err == model.ErrEmptyName {
 			http.Error(w, "Empty name", http.StatusBadRequest)
 			return
