@@ -31,22 +31,21 @@ func (s Service) Run() {
 	log.Fatal(http.ListenAndServe(":8000", router))
 }
 
-func (s Service) handleGetTodos(w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte("Hello, World!"))
-}
-
 func (s Service) handleCreateTodo(w http.ResponseWriter, r *http.Request) {
 	body, err := ioutil.ReadAll(r.Body)
+	defer r.Body.Close()
 	if err != nil {
 		http.Error(w, "Error reading request body", http.StatusBadRequest)
+		return
 	}
 
-	var dto CreateTodoDto
-	if err = json.Unmarshal(body, &dto); err != nil {
-		http.Error(w, "Error parsing json", http.StatusBadRequest)
+	var request CreateTodoRequest
+	if err = json.Unmarshal(body, &request); err != nil {
+		http.Error(w, "Error unmarshaling json", http.StatusBadRequest)
+		return
 	}
 
-	todo, err := model.NewTodo(dto.Name, dto.Description, time.Now().UTC(), dto.Until)
+	todo, err := model.NewTodo(request.Name, request.Description, time.Now().UTC(), request.Until)
 	if err != nil {
 		if err == model.ErrEmptyName {
 			http.Error(w, "Empty name", http.StatusBadRequest)
@@ -65,7 +64,38 @@ func (s Service) handleCreateTodo(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err = s.storage.Add(*todo); err != nil {
-		http.Error(w, "Error storing todo", http.StatusInternalServerError)
+		http.Error(w, "Error accessing the storage", http.StatusInternalServerError)
 		return
+	}
+}
+
+func (s Service) handleGetTodos(w http.ResponseWriter, r *http.Request) {
+	todos, err := s.storage.GetAll()
+	if err != nil {
+		http.Error(w, "Error accessing the storage", http.StatusInternalServerError)
+		return
+	}
+
+	response := GetTodosResponse{
+		Todos: make([]Todo, 0, len(todos)),
+	}
+	for i, todo := range todos {
+		response.Todos[i] = toTodoDto(todo)
+	}
+
+	bytes, err := json.Marshal(response)
+	if err != nil {
+		http.Error(w, "Error marshaling json", http.StatusInternalServerError)
+	}
+
+	w.Write(bytes)
+}
+
+func toTodoDto(todo model.Todo) Todo {
+	return Todo{
+		Name:        string(todo.Name),
+		Description: string(todo.Description),
+		CreatedAt:   todo.CreatedAt,
+		Until:       todo.Until,
 	}
 }

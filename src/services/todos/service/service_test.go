@@ -3,6 +3,7 @@ package service
 import (
 	"bytes"
 	"encoding/json"
+	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"services/todos/model"
@@ -20,7 +21,7 @@ import (
 func TestCreate(t *testing.T) {
 	tcs := []struct {
 		Description     string
-		GivenBody       CreateTodoDto
+		GivenBody       CreateTodoRequest
 		ExpectedStatus  int
 		VerifyTodoSaved bool
 	}{
@@ -30,7 +31,7 @@ func TestCreate(t *testing.T) {
 		},
 		{
 			Description: "invalid/name empty",
-			GivenBody: CreateTodoDto{
+			GivenBody: CreateTodoRequest{
 				Until:       time.Now().Add(1 * time.Hour),
 				Description: "Joe owes me money",
 			},
@@ -38,7 +39,7 @@ func TestCreate(t *testing.T) {
 		},
 		{
 			Description: "invalid/name too long",
-			GivenBody: CreateTodoDto{
+			GivenBody: CreateTodoRequest{
 				Name:        rand.String(101),
 				Until:       time.Now().Add(1 * time.Hour),
 				Description: "Joe owes me money",
@@ -47,7 +48,7 @@ func TestCreate(t *testing.T) {
 		},
 		{
 			Description: "invalid/description too long",
-			GivenBody: CreateTodoDto{
+			GivenBody: CreateTodoRequest{
 				Name:        rand.String(100),
 				Until:       time.Now().Add(1 * time.Hour),
 				Description: rand.String(301),
@@ -56,7 +57,7 @@ func TestCreate(t *testing.T) {
 		},
 		{
 			Description: "valid",
-			GivenBody: CreateTodoDto{
+			GivenBody: CreateTodoRequest{
 				Name:        "Call Joe",
 				Until:       time.Now().Add(1 * time.Hour).UTC(),
 				Description: "Joe owes me money",
@@ -75,14 +76,11 @@ func TestCreate(t *testing.T) {
 			data, err := json.Marshal(tc.GivenBody)
 			require.NoError(t, err)
 
-			r := httptest.NewRequest(http.MethodPost, "/todos", bytes.NewReader(data))
-
 			rw := httptest.NewRecorder()
-
+			r := httptest.NewRequest(http.MethodPost, "/todos", bytes.NewReader(data))
 			sut.handleCreateTodo(rw, r)
 
 			require.Equal(t, tc.ExpectedStatus, rw.Result().StatusCode)
-
 			if tc.VerifyTodoSaved {
 				storageMock.AssertCalled(t, "Add", mock.MatchedBy(func(todo model.Todo) bool {
 					return assert.Equal(t, tc.GivenBody.Name, string(todo.Name)) &&
@@ -90,6 +88,47 @@ func TestCreate(t *testing.T) {
 						assert.Equal(t, tc.GivenBody.Until, todo.Until)
 				}))
 			}
+		})
+	}
+}
+
+func TestGet(t *testing.T) {
+	tcs := []struct {
+		Description      string
+		GivenSavedTodos  []model.Todo
+		ExpectedStatus   int
+		ExpectedResponse GetTodosResponse
+	}{
+		{
+			Description:    "empty",
+			ExpectedStatus: http.StatusOK,
+			ExpectedResponse: GetTodosResponse{
+				Todos: []Todo{},
+			},
+		},
+	}
+
+	for _, tc := range tcs {
+		t.Run(tc.Description, func(t *testing.T) {
+			storageStub := &mocks.Storage{}
+			storageStub.On("GetAll").Return(tc.GivenSavedTodos, nil)
+			sut := NewService(storageStub)
+
+			r := httptest.NewRequest(http.MethodGet, "/todos", nil)
+			rw := httptest.NewRecorder()
+
+			sut.handleGetTodos(rw, r)
+
+			require.Equal(t, tc.ExpectedStatus, rw.Result().StatusCode)
+
+			bytes, err := ioutil.ReadAll(rw.Result().Body)
+			require.NoError(t, err)
+
+			var actualResponse GetTodosResponse
+			err = json.Unmarshal(bytes, &actualResponse)
+			require.NoError(t, err)
+
+			require.Equal(t, tc.ExpectedResponse, actualResponse)
 		})
 	}
 }
