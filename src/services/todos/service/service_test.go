@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"services/utils/rand"
 	"testing"
 	"time"
 
@@ -18,6 +19,32 @@ func TestCreate(t *testing.T) {
 		ExpectedStatus int
 	}{
 		{
+			Description: "invalid/name empty",
+			GivenBody: CreateTodoDto{
+				Until:       time.Now().Add(1 * time.Hour),
+				Description: "Joe owes me money",
+			},
+			ExpectedStatus: http.StatusBadRequest,
+		},
+		{
+			Description: "invalid/name too long",
+			GivenBody: CreateTodoDto{
+				Name:        rand.String(101),
+				Until:       time.Now().Add(1 * time.Hour),
+				Description: "Joe owes me money",
+			},
+			ExpectedStatus: http.StatusBadRequest,
+		},
+		{
+			Description: "invalid/description too long",
+			GivenBody: CreateTodoDto{
+				Name:        rand.String(100),
+				Until:       time.Now().Add(1 * time.Hour),
+				Description: rand.String(301),
+			},
+			ExpectedStatus: http.StatusBadRequest,
+		},
+		{
 			Description: "valid",
 			GivenBody: CreateTodoDto{
 				Name:        "Call Joe",
@@ -29,17 +56,19 @@ func TestCreate(t *testing.T) {
 	}
 
 	for _, tc := range tcs {
-		s := new(Service)
+		t.Run(tc.Description, func(t *testing.T) {
+			s := new(Service)
 
-		data, err := json.Marshal(tc.GivenBody)
-		require.NoError(t, err)
+			data, err := json.Marshal(tc.GivenBody)
+			require.NoError(t, err)
 
-		r := httptest.NewRequest(http.MethodPost, "/todos", bytes.NewReader(data))
+			r := httptest.NewRequest(http.MethodPost, "/todos", bytes.NewReader(data))
 
-		rw := httptest.NewRecorder()
+			rw := httptest.NewRecorder()
 
-		s.handleCreateTodo(rw, r)
+			s.handleCreateTodo(rw, r)
 
-		require.Equal(t, tc.ExpectedStatus, rw.Result().StatusCode)
+			require.Equal(t, tc.ExpectedStatus, rw.Result().StatusCode)
+		})
 	}
 }

@@ -4,7 +4,7 @@ import "time"
 
 // CreateTodoDto ...
 type CreateTodoDto struct {
-	Name        string    `json:"name"`
-	Until       time.Time `json:"until"`
-	Description string    `json:"decription"`
+	Name        string    `json:"name,omitempty"`
+	Until       time.Time `json:"until,omitempty"`
+	Description string    `json:"decription,omitempty"`
 }

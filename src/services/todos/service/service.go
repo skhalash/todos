@@ -1,6 +1,8 @@
 package service
 
 import (
+	"encoding/json"
+	"io/ioutil"
 	"log"
 	"net/http"
 
@@ -30,5 +32,25 @@ func (s Service) handleGetTodos(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s Service) handleCreateTodo(w http.ResponseWriter, r *http.Request) {
+	body, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		http.Error(w, "Error reading request body", http.StatusBadRequest)
+	}
 
+	var dto CreateTodoDto
+	if err = json.Unmarshal(body, &dto); err != nil {
+		http.Error(w, "Error parsing json", http.StatusBadRequest)
+	}
+
+	if dto.Name == "" {
+		http.Error(w, "Empty name", http.StatusBadRequest)
+	}
+
+	if len(dto.Name) > 100 {
+		http.Error(w, "Name too long", http.StatusBadRequest)
+	}
+
+	if len(dto.Description) > 300 {
+		http.Error(w, "Description too long", http.StatusBadRequest)
+	}
 }
