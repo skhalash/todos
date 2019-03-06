@@ -56,7 +56,11 @@ func (s Service) handleCreateTodo(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	if len(dto.Description) > 300 {
-		http.Error(w, "Description too long", http.StatusBadRequest)
+	_, err = model.NewDescription(dto.Description)
+	if err != nil {
+		if err == model.ErrDescriptionTooLong {
+			http.Error(w, "Description too long", http.StatusBadRequest)
+			return
+		}
 	}
 }
